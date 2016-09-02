@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Api by YOTOV-LIMITED</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Api</h1>
+      <h2 class="project-tagline">Documentation and Samples for the Official HN API.</h2>
+      <a href="https://github.com/YOTOV-LIMITED/API" class="btn">View on GitHub</a>
+      <a href="https://github.com/YOTOV-LIMITED/API/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/YOTOV-LIMITED/API/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="hacker-news-api" class="anchor" href="#hacker-news-api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Hacker News API</h1>
+
+<h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview</h2>
+
+<p>In partnership with <a href="https://firebase.google.com/">Firebase</a>, we're making the public Hacker News data available in near real time. Firebase enables easy access from <a href="https://firebase.google.com/docs/android/setup">Android</a>, <a href="https://firebase.google.com/docs/ios/setup">iOS</a> and the <a href="https://firebase.google.com/docs/web/setup">web</a>. <a href="https://firebase.google.com/docs/server/setup">Servers</a> aren't left out.</p>
+
+<p>If you can use one of the many <a href="https://firebase.google.com/docs/libraries/">Firebase client libraries</a> you really should. The libraries handle networking efficiently and can raise events when things change. Be sure to check them out.</p>
+
+<p>Please email <a href="mailto:api@ycombinator.com">api@ycombinator.com</a> if you find any bugs.</p>
+
+<h2>
+<a id="uri-and-versioning" class="anchor" href="#uri-and-versioning" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>URI and Versioning</h2>
+
+<p>We hope to improve the API over time, and may later enable access to private per-user data using OAuth. The changes won't always be backward compatible, so we're going to use versioning. This first iteration will have URIs prefixed with <a href="https://hacker-news.firebaseio.com/v0/">https://hacker-news.firebaseio.com/v0/</a> and is structured as described below. There is currently no rate limit.</p>
+
+<p>For versioning purposes, only removal of a non-optional field or alteration of an existing field will be considered incompatible changes. <em>Clients should gracefully handle additional fields they don't expect, and simply ignore them.</em></p>
+
+<h2>
+<a id="design" class="anchor" href="#design" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Design</h2>
+
+<p>The v0 API is essentially a dump of our in-memory data structures. We know, what works great locally in memory isn't so hot over the network. Many of the awkward things are just the way HN works internally. Want to know the total number of comments on an article? Traverse the tree and count. Want to know the children of an item? Load the item and get their IDs, then load them. The newest page? Starts at item maxid and walks backward, keeping only the top level stories. Same for Ask, Show, etc.</p>
+
+<p>I'm not saying this to defend it - It's not the ideal public API, but it's the one we could release in the time we had. While awkward, it's possible to implement most of HN using it.</p>
+
+<h2>
+<a id="items" class="anchor" href="#items" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Items</h2>
+
+<p>Stories, comments, jobs, Ask HNs and even polls are just items. They're identified by their ids, which are unique integers, and live under <a href="https://hacker-news.firebaseio.com/v0/item/">https://hacker-news.firebaseio.com/v0/item/</a>.</p>
+
+<p>All items have some of the following properties, with required properties in bold:</p>
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>id</strong></td>
+<td>The item's unique id.</td>
+</tr>
+<tr>
+<td>deleted</td>
+<td>
+<code>true</code> if the item is deleted.</td>
+</tr>
+<tr>
+<td>type</td>
+<td>The type of item. One of "job", "story", "comment", "poll", or "pollopt".</td>
+</tr>
+<tr>
+<td>by</td>
+<td>The username of the item's author.</td>
+</tr>
+<tr>
+<td>time</td>
+<td>Creation date of the item, in <a href="http://en.wikipedia.org/wiki/Unix_time">Unix Time</a>.</td>
+</tr>
+<tr>
+<td>text</td>
+<td>The comment, story or poll text. HTML.</td>
+</tr>
+<tr>
+<td>dead</td>
+<td>
+<code>true</code> if the item is dead.</td>
+</tr>
+<tr>
+<td>parent</td>
+<td>The item's parent. For comments, either another comment or the relevant story. For pollopts, the relevant poll.</td>
+</tr>
+<tr>
+<td>kids</td>
+<td>The ids of the item's comments, in ranked display order.</td>
+</tr>
+<tr>
+<td>url</td>
+<td>The URL of the story.</td>
+</tr>
+<tr>
+<td>score</td>
+<td>The story's score, or the votes for a pollopt.</td>
+</tr>
+<tr>
+<td>title</td>
+<td>The title of the story, poll or job.</td>
+</tr>
+<tr>
+<td>parts</td>
+<td>A list of related pollopts, in display order.</td>
+</tr>
+<tr>
+<td>descendants</td>
+<td>In the case of stories or polls, the total comment count.</td>
+</tr>
+</tbody>
+</table>
+
+<p>For example, a story: <a href="https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty">https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>by<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>dhouston<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>descendants<span class="pl-pds">"</span></span> : <span class="pl-c1">71</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-c1">8863</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>kids<span class="pl-pds">"</span></span> : [ <span class="pl-c1">8952</span>, <span class="pl-c1">9224</span>, <span class="pl-c1">8917</span>, <span class="pl-c1">8884</span>, <span class="pl-c1">8887</span>, <span class="pl-c1">8943</span>, <span class="pl-c1">8869</span>, <span class="pl-c1">8958</span>, <span class="pl-c1">9005</span>, <span class="pl-c1">9671</span>, <span class="pl-c1">8940</span>, <span class="pl-c1">9067</span>, <span class="pl-c1">8908</span>, <span class="pl-c1">9055</span>, <span class="pl-c1">8865</span>, <span class="pl-c1">8881</span>, <span class="pl-c1">8872</span>, <span class="pl-c1">8873</span>, <span class="pl-c1">8955</span>, <span class="pl-c1">10403</span>, <span class="pl-c1">8903</span>, <span class="pl-c1">8928</span>, <span class="pl-c1">9125</span>, <span class="pl-c1">8998</span>, <span class="pl-c1">8901</span>, <span class="pl-c1">8902</span>, <span class="pl-c1">8907</span>, <span class="pl-c1">8894</span>, <span class="pl-c1">8878</span>, <span class="pl-c1">8870</span>, <span class="pl-c1">8980</span>, <span class="pl-c1">8934</span>, <span class="pl-c1">8876</span> ],
+  <span class="pl-s"><span class="pl-pds">"</span>score<span class="pl-pds">"</span></span> : <span class="pl-c1">111</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>time<span class="pl-pds">"</span></span> : <span class="pl-c1">1175714200</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>title<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>My YC app: Dropbox - Throw away your USB drive<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>story<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>url<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>http://www.getdropbox.com/u/2/screencast.html<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>comment: <a href="https://hacker-news.firebaseio.com/v0/item/2921983.json?print=pretty">https://hacker-news.firebaseio.com/v0/item/2921983.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>by<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>norvig<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-c1">2921983</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>kids<span class="pl-pds">"</span></span> : [ <span class="pl-c1">2922097</span>, <span class="pl-c1">2922429</span>, <span class="pl-c1">2924562</span>, <span class="pl-c1">2922709</span>, <span class="pl-c1">2922573</span>, <span class="pl-c1">2922140</span>, <span class="pl-c1">2922141</span> ],
+  <span class="pl-s"><span class="pl-pds">"</span>parent<span class="pl-pds">"</span></span> : <span class="pl-c1">2921506</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>Aw shucks, guys ... you make me blush with your compliments.&lt;p&gt;Tell you what, Ill make a deal: I'll keep writing if you keep reading. K?<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>time<span class="pl-pds">"</span></span> : <span class="pl-c1">1314211127</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>comment<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>ask: <a href="https://hacker-news.firebaseio.com/v0/item/121003.json?print=pretty">https://hacker-news.firebaseio.com/v0/item/121003.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>by<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>tel<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>descendants<span class="pl-pds">"</span></span> : <span class="pl-c1">16</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-c1">121003</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>kids<span class="pl-pds">"</span></span> : [ <span class="pl-c1">121016</span>, <span class="pl-c1">121109</span>, <span class="pl-c1">121168</span> ],
+  <span class="pl-s"><span class="pl-pds">"</span>score<span class="pl-pds">"</span></span> : <span class="pl-c1">25</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>&lt;i&gt;or&lt;/i&gt; HN: the Next Iteration&lt;p&gt;I get the impression that with Arc being released a lot of people who never had time for HN before are suddenly dropping in more often. (PG: what are the numbers on this? I'm envisioning a spike.)&lt;p&gt;Not to say that isn't great, but I'm wary of Diggification. Between links comparing programming to sex and a flurry of gratuitous, ostentatious  adjectives in the headlines it's a bit concerning.&lt;p&gt;80% of the stuff that makes the front page is still pretty awesome, but what's in place to keep the signal/noise ratio high? Does the HN model still work as the community scales? What's in store for (++ HN)?<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>time<span class="pl-pds">"</span></span> : <span class="pl-c1">1203647620</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>title<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>Ask HN: The Arc Effect<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>story<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>url<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>job: <a href="https://hacker-news.firebaseio.com/v0/item/192327.json?print=pretty">https://hacker-news.firebaseio.com/v0/item/192327.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>by<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>justin<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-c1">192327</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>score<span class="pl-pds">"</span></span> : <span class="pl-c1">6</span>,
+  "text" : "Justin.tv is the biggest live video site online. We serve hundreds of thousands of video streams a day, and have supported up to 50k live concurrent viewers. Our site is growing every week, and we just added a 10 gbps line to our colo. Our unique visitors are up 900% since January.&lt;p&gt;There are a lot of pieces that fit together to make Justin.tv work: our video cluster, IRC server, our web app, and our monitoring and search services, to name a few. A lot of our website is dependent on Flash, and we're looking for talented Flash Engineers who know AS2 and AS3 very well who want to be leaders in the development of our Flash.&lt;p&gt;Responsibilities&lt;p&gt;&lt;pre&gt;&lt;code&gt;    * Contribute to product design and implementation discussions\n    * Implement projects from the idea phase to production\n    * Test and iterate code before and after production release \n&lt;/code&gt;&lt;/pre&gt;\nQualifications&lt;p&gt;&lt;pre&gt;&lt;code&gt;    * You should know AS2, AS3, and maybe a little be of Flex.\n    * Experience building web applications.\n    * A strong desire to work on website with passionate users and ideas for how to improve it.\n    * Experience hacking video streams, python, Twisted or rails all a plus.\n&lt;/code&gt;&lt;/pre&gt;\nWhile we're growing rapidly, Justin.tv is still a small, technology focused company, built by hackers for hackers. Seven of our ten person team are engineers or designers. We believe in rapid development, and push out new code releases every week. We're based in a beautiful office in the SOMA district of SF, one block from the caltrain station. If you want a fun job hacking on code that will touch a lot of people, JTV is for you.&lt;p&gt;Note: You must be physically present in SF to work for JTV. Completing the technical problem at &lt;a href=\"http://www.justin.tv/problems/bml\" rel=\"nofollow\"&gt;http://www.justin.tv/problems/bml&lt;/a&gt; will go a long way with us. Cheers!",
+  <span class="pl-s"><span class="pl-pds">"</span>time<span class="pl-pds">"</span></span> : <span class="pl-c1">1210981217</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>title<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>Justin.tv is looking for a Lead Flash Engineer!<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>job<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>url<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>poll: <a href="https://hacker-news.firebaseio.com/v0/item/126809.json?print=pretty">https://hacker-news.firebaseio.com/v0/item/126809.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>by<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>pg<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>descendants<span class="pl-pds">"</span></span> : <span class="pl-c1">54</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-c1">126809</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>kids<span class="pl-pds">"</span></span> : [ <span class="pl-c1">126822</span>, <span class="pl-c1">126823</span>, <span class="pl-c1">126993</span>, <span class="pl-c1">126824</span>, <span class="pl-c1">126934</span>, <span class="pl-c1">127411</span>, <span class="pl-c1">126888</span>, <span class="pl-c1">127681</span>, <span class="pl-c1">126818</span>, <span class="pl-c1">126816</span>, <span class="pl-c1">126854</span>, <span class="pl-c1">127095</span>, <span class="pl-c1">126861</span>, <span class="pl-c1">127313</span>, <span class="pl-c1">127299</span>, <span class="pl-c1">126859</span>, <span class="pl-c1">126852</span>, <span class="pl-c1">126882</span>, <span class="pl-c1">126832</span>, <span class="pl-c1">127072</span>, <span class="pl-c1">127217</span>, <span class="pl-c1">126889</span>, <span class="pl-c1">127535</span>, <span class="pl-c1">126917</span>, <span class="pl-c1">126875</span> ],
+  <span class="pl-s"><span class="pl-pds">"</span>parts<span class="pl-pds">"</span></span> : [ <span class="pl-c1">126810</span>, <span class="pl-c1">126811</span>, <span class="pl-c1">126812</span> ],
+  <span class="pl-s"><span class="pl-pds">"</span>score<span class="pl-pds">"</span></span> : <span class="pl-c1">46</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>time<span class="pl-pds">"</span></span> : <span class="pl-c1">1204403652</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>title<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>Poll: What would happen if News.YC had explicit support for polls?<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>poll<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>and one of its parts: <a href="https://hacker-news.firebaseio.com/v0/item/160705.json?print=pretty">https://hacker-news.firebaseio.com/v0/item/160705.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>by<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>pg<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-c1">160705</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>parent<span class="pl-pds">"</span></span> : <span class="pl-c1">160704</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>score<span class="pl-pds">"</span></span> : <span class="pl-c1">335</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>Yes, ban them; I'm tired of seeing Valleywag stories on News.YC.<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>time<span class="pl-pds">"</span></span> : <span class="pl-c1">1207886576</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>pollopt<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<h2>
+<a id="users" class="anchor" href="#users" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Users</h2>
+
+<p>Users are identified by case-sensitive ids, and live under <a href="https://hacker-news.firebaseio.com/v0/user/">https://hacker-news.firebaseio.com/v0/user/</a>. Only users that have public activity (comments or story submissions) on the site are available through the API.</p>
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>id</strong></td>
+<td>The user's unique username. Case-sensitive. Required.</td>
+</tr>
+<tr>
+<td>delay</td>
+<td>Delay in minutes between a comment's creation and its visibility to other users.</td>
+</tr>
+<tr>
+<td><strong>created</strong></td>
+<td>Creation date of the user, in <a href="http://en.wikipedia.org/wiki/Unix_time">Unix Time</a>.</td>
+</tr>
+<tr>
+<td><strong>karma</strong></td>
+<td>The user's karma.</td>
+</tr>
+<tr>
+<td>about</td>
+<td>The user's optional self-description. HTML.</td>
+</tr>
+<tr>
+<td>submitted</td>
+<td>List of the user's stories, polls and comments.</td>
+</tr>
+</tbody>
+</table>
+
+<p>For example: <a href="https://hacker-news.firebaseio.com/v0/user/jl.json?print=pretty">https://hacker-news.firebaseio.com/v0/user/jl.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>about<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>This is a test<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>created<span class="pl-pds">"</span></span> : <span class="pl-c1">1173923446</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>delay<span class="pl-pds">"</span></span> : <span class="pl-c1">0</span>,
+  <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>jl<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>karma<span class="pl-pds">"</span></span> : <span class="pl-c1">2937</span>,
+  "submitted" : [ 8265435, 8168423, 8090946, 8090326, 7699907, 7637962, 7596179, 7596163, 7594569, 7562135, 7562111, 7494708, 7494171, 7488093, 7444860, 7327817, 7280290, 7278694, 7097557, 7097546, 7097254, 7052857, 7039484, 6987273, 6649999, 6649706, 6629560, 6609127, 6327951, 6225810, 6111999, 5580079, 5112008, 4907948, 4901821, 4700469, 4678919, 3779193, 3711380, 3701405, 3627981, 3473004, 3473000, 3457006, 3422158, 3136701, 2943046, 2794646, 2482737, 2425640, 2411925, 2408077, 2407992, 2407940, 2278689, 2220295, 2144918, 2144852, 1875323, 1875295, 1857397, 1839737, 1809010, 1788048, 1780681, 1721745, 1676227, 1654023, 1651449, 1641019, 1631985, 1618759, 1522978, 1499641, 1441290, 1440993, 1436440, 1430510, 1430208, 1385525, 1384917, 1370453, 1346118, 1309968, 1305415, 1305037, 1276771, 1270981, 1233287, 1211456, 1210688, 1210682, 1194189, 1193914, 1191653, 1190766, 1190319, 1189925, 1188455, 1188177, 1185884, 1165649, 1164314, 1160048, 1159156, 1158865, 1150900, 1115326, 933897, 924482, 923918, 922804, 922280, 922168, 920332, 919803, 917871, 912867, 910426, 902506, 891171, 807902, 806254, 796618, 786286, 764412, 764325, 642566, 642564, 587821, 575744, 547504, 532055, 521067, 492164, 491979, 383935, 383933, 383930, 383927, 375462, 263479, 258389, 250751, 245140, 243472, 237445, 229393, 226797, 225536, 225483, 225426, 221084, 213940, 213342, 211238, 210099, 210007, 209913, 209908, 209904, 209903, 170904, 165850, 161566, 158388, 158305, 158294, 156235, 151097, 148566, 146948, 136968, 134656, 133455, 129765, 126740, 122101, 122100, 120867, 120492, 115999, 114492, 114304, 111730, 110980, 110451, 108420, 107165, 105150, 104735, 103188, 103187, 99902, 99282, 99122, 98972, 98417, 98416, 98231, 96007, 96005, 95623, 95487, 95475, 95471, 95467, 95326, 95322, 94952, 94681, 94679, 94678, 94420, 94419, 94393, 94149, 94008, 93490, 93489, 92944, 92247, 91713, 90162, 90091, 89844, 89678, 89498, 86953, 86109, 85244, 85195, 85194, 85193, 85192, 84955, 84629, 83902, 82918, 76393, 68677, 61565, 60542, 47745, 47744, 41098, 39153, 38678, 37741, 33469, 12897, 6746, 5252, 4752, 4586, 4289 ]
+}</pre></div>
+
+<h2>
+<a id="live-data" class="anchor" href="#live-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Live Data</h2>
+
+<p>The coolest part of Firebase is its support for change notifications. While you can subscribe to individual items and profiles, you'll need to use the following to observe front page ranking, new items, and new profiles.</p>
+
+<h3>
+<a id="max-item-id" class="anchor" href="#max-item-id" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Max Item ID</h3>
+
+<p>The current largest item id is at <a href="https://hacker-news.firebaseio.com/v0/maxitem">https://hacker-news.firebaseio.com/v0/maxitem</a>. You can walk backward from here to discover all items.</p>
+
+<p>Example: <a href="https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty">https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre><span class="pl-c1">9130260</span></pre></div>
+
+<h3>
+<a id="new-top-and-best-stories" class="anchor" href="#new-top-and-best-stories" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>New, Top and Best Stories</h3>
+
+<p>Up to 500 top and new stories are at <a href="https://hacker-news.firebaseio.com/v0/topstories">https://hacker-news.firebaseio.com/v0/topstories</a> and <a href="https://hacker-news.firebaseio.com/v0/newstories">https://hacker-news.firebaseio.com/v0/newstories</a>. Best stories are at <a href="https://hacker-news.firebaseio.com/v0/beststories">https://hacker-news.firebaseio.com/v0/beststories</a>.</p>
+
+<p>Example: <a href="https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty">https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>[ <span class="pl-c1">9129911</span>, <span class="pl-c1">9129199</span>, <span class="pl-c1">9127761</span>, <span class="pl-c1">9128141</span>, <span class="pl-c1">9128264</span>, <span class="pl-c1">9127792</span>, <span class="pl-c1">9129248</span>, <span class="pl-c1">9127092</span>, <span class="pl-c1">9128367</span>, <span class="pl-ii">...</span>, <span class="pl-c1">9038733</span> ]</pre></div>
+
+<h3>
+<a id="ask-show-and-job-stories" class="anchor" href="#ask-show-and-job-stories" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ask, Show and Job Stories</h3>
+
+<p>Up to 200 of the latest Ask HN, Show HN, and Job stories are at <a href="https://hacker-news.firebaseio.com/v0/askstories">https://hacker-news.firebaseio.com/v0/askstories</a>, <a href="https://hacker-news.firebaseio.com/v0/showstories">https://hacker-news.firebaseio.com/v0/showstories</a>, and <a href="https://hacker-news.firebaseio.com/v0/jobstories">https://hacker-news.firebaseio.com/v0/jobstories</a>.</p>
+
+<p>Example: <a href="https://hacker-news.firebaseio.com/v0/askstories.json?print=pretty">https://hacker-news.firebaseio.com/v0/askstories.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>[ <span class="pl-c1">9127232</span>, <span class="pl-c1">9128437</span>, <span class="pl-c1">9130049</span>, <span class="pl-c1">9130144</span>, <span class="pl-c1">9130064</span>, <span class="pl-c1">9130028</span>, <span class="pl-c1">9129409</span>, <span class="pl-c1">9127243</span>, <span class="pl-c1">9128571</span>, <span class="pl-ii">...</span>, <span class="pl-c1">9120990</span> ]</pre></div>
+
+<h3>
+<a id="changed-items-and-profiles" class="anchor" href="#changed-items-and-profiles" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Changed Items and Profiles</h3>
+
+<p>The item and profile changes are at <a href="https://hacker-news.firebaseio.com/v0/updates">https://hacker-news.firebaseio.com/v0/updates</a>.</p>
+
+<p>Example: <a href="https://hacker-news.firebaseio.com/v0/updates.json?print=pretty">https://hacker-news.firebaseio.com/v0/updates.json?print=pretty</a></p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>items<span class="pl-pds">"</span></span> : [ <span class="pl-c1">8423305</span>, <span class="pl-c1">8420805</span>, <span class="pl-c1">8423379</span>, <span class="pl-c1">8422504</span>, <span class="pl-c1">8423178</span>, <span class="pl-c1">8423336</span>, <span class="pl-c1">8422717</span>, <span class="pl-c1">8417484</span>, <span class="pl-c1">8423378</span>, <span class="pl-c1">8423238</span>, <span class="pl-c1">8423353</span>, <span class="pl-c1">8422395</span>, <span class="pl-c1">8423072</span>, <span class="pl-c1">8423044</span>, <span class="pl-c1">8423344</span>, <span class="pl-c1">8423374</span>, <span class="pl-c1">8423015</span>, <span class="pl-c1">8422428</span>, <span class="pl-c1">8423377</span>, <span class="pl-c1">8420444</span>, <span class="pl-c1">8423300</span>, <span class="pl-c1">8422633</span>, <span class="pl-c1">8422599</span>, <span class="pl-c1">8422408</span>, <span class="pl-c1">8422928</span>, <span class="pl-c1">8394339</span>, <span class="pl-c1">8421900</span>, <span class="pl-c1">8420902</span>, <span class="pl-c1">8422087</span> ],
+  <span class="pl-s"><span class="pl-pds">"</span>profiles<span class="pl-pds">"</span></span> : [ <span class="pl-s"><span class="pl-pds">"</span>thefox<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mdda<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>plinkplonk<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>GBond<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>rqebmm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>neom<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>arram<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mcmancini<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>metachris<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>DubiousPusher<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>dochtman<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>kstrauser<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>biren34<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>foobarqux<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mkehrt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>nathanm412<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>wmblaettler<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>JoeAnzalone<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>rcconf<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>johndbritton<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>msie<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>cktsai<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>27182818284<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>kevinskii<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>wildwood<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mcherm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>naiyt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>matthewmcg<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>joelhaus<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>tshtf<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MrZongle2<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Bogdanp<span class="pl-pds">"</span></span> ]
+}</pre></div>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/YOTOV-LIMITED/API">Api</a> is maintained by <a href="https://github.com/YOTOV-LIMITED">YOTOV-LIMITED</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
